@@ -1,0 +1,265 @@
+---
+title: "logistic.ps.forecast(massive input version)"
+output: html_document
+---
+
+The coefficients from the winning model (defined by error matrix results below) are used in the professional services predictor algorithm (not shown in this file), where the resultant log odds ratio is converted into a win probability and then multiplied by each opportunity's professional services value to arrive at an expected PS value for each opportunity. This exact same algorithm can be used to predict bookings as well.
+
+```{r}
+
+library(readr)
+
+# load Grouped_Opps_Appended.csv
+# Input consists of 3 million appended records prior to grouping, which was done in Power Query
+forecast.input <- read.csv(file = 'Grouped_Opps_Appended.csv')
+
+```
+
+```{r}
+# Checking if any null values need to be removed for regression
+sum(is.na(forecast.input$Win.or.Loss.Push.))
+sum(is.na(forecast.input$VP.Forecast.Category.Override))
+sum(is.na(forecast.input$Sales.Segment))
+sum(is.na(forecast.input$Order.Type))
+sum(is.na(forecast.input$Forecast.Week.Number))
+
+```
+
+
+```{r}
+# This code block filters the dataset
+
+# Library needed to use "filter" function
+library(dplyr)
+
+
+# Getting rid of Other because irrelevant. Removing Agency Central because there are so many more Central opps (which are very different than other non-transactional segments) that will skew the data in the absence of interaction terms to correct for this
+  forecast.filtered1 <- filter(forecast.input,
+    !(`Sales.Segment` %in% c("Agency Central", "Other")))
+  
+# Only keeping pipeline stages
+  forecast.filtered2 <- filter(forecast.filtered1,
+    !(`Stage` %in% c("0 - MQL", "Migration", "Decommission", "Closed Won")))
+
+# Removing "Omitted" forecast category
+  forecast.filtered3 <- filter(forecast.filtered2,
+    !(`VP.Forecast.Category.Override` %in% c("Omitted")))
+
+  
+# Count rows in each dataframe to ensure the filtering is correct
+  nrow(forecast.filtered1)
+  nrow(forecast.filtered2)
+  nrow(forecast.filtered3)
+
+# Remove all prior dataframes from the global environment (for cleanliness)
+  rm(forecast.filtered1, forecast.filtered2)
+```
+
+
+```{r}
+# Turning target variable (Win or Loss/Push?) into 1 or 0
+reg.input <- within(forecast.filtered3,   {
+  `Opp.Won.Target` <- NA
+    `Opp.Won.Target`[`Win.or.Loss.Push`==
+    "Win"] <- 1
+    `Opp.Won.Target`[`Win.or.Loss.Push`==
+    "Loss/Push"] <- 0
+})
+
+# Clean workspace
+rm(list=setdiff(ls(), "reg.input"))
+```
+
+
+```{r}
+# Create interaction terms
+interaction.terms <- as.data.frame(model.matrix(~
+      (Agency.Enterprise + Agency.Strategic + Agency.Field + CMGA + DCM + Vertafore.Canada - 1)*
+      (Cross.Sell + New + Upgrade + Upsell + Migration + Decommission + Recontract - 1) * (Lifespan.30 + Lifespan.60 - 1), reg.input))
+
+
+# Remove dummy variables (since they already exist in the reg.input dataset)
+# Remove three-way interaction (only 2 way interactions with Segment)
+library(dplyr)
+only.interaction.terms <- subset(select(interaction.terms, 16:69))
+
+# Append interaction term dataset to reg.input
+appended.reg <- cbind(reg.input, only.interaction.terms)
+
+# Clean workspace
+rm(list=setdiff(ls(), c('reg.input','appended.reg')))
+```
+
+
+```{r}
+# Getting rid of the nested "X" column
+appended.reg = subset(appended.reg, select = -c(x) )
+```
+
+
+```{r}
+# The following oversampling is required to decrease the volume of non-events so that proportion of events and non-events gets less skewed, since target events spend less time being "visible" in the source dataset due to their much shorter lifespans.
+
+
+#oversample for minority class to be 40% all observations (57,453 observations)
+forty.upsample.minority <- appended.reg[sample( which( appended.reg$Opp.Won.Target==1), 48821, replace = TRUE), ]
+
+#oversample for minority class to be 30% of all observations (36,934 observations)
+thirty.upsample.minority <- appended.reg[sample( which( appended.reg$Opp.Won.Target==1), 28302, replace = TRUE), ]
+
+#oversample for minority class to be 20% of all observations (21,545 observations)
+twenty.upsample.minority <- appended.reg[sample( which( appended.reg$Opp.Won.Target==1), 12913, replace = TRUE), ]
+
+#oversample for minority class to be 15% of all observations (15,208 observations)
+fifteen.upsample.minority <- appended.reg[sample( which( appended.reg$Opp.Won.Target==1), 6576, replace = TRUE), ]
+
+
+#combine original dataset with the new oversampled minority datasets
+forty.balanced.reg <- rbind(appended.reg, forty.upsample.minority)
+
+thirty.balanced.reg <- rbind(appended.reg, thirty.upsample.minority)
+
+twenty.balanced.reg <- rbind(appended.reg, twenty.upsample.minority)
+
+fifteen.balanced.reg <- rbind(appended.reg, fifteen.upsample.minority)
+
+#count opp.won.target columns to see if sampling worked correctly
+table(forty.balanced.reg$Opp.Won.Target)
+table(thirty.balanced.reg$Opp.Won.Target)
+table(twenty.balanced.reg$Opp.Won.Target)
+table(fifteen.balanced.reg$Opp.Won.Target)
+
+# Clean workspace
+rm(list=setdiff(ls(), c('reg.input','appended.reg', 'forty.balanced.reg', 'thirty.balanced.reg', 'twenty.balanced.reg', 'fifteen.balanced.reg')))
+```
+
+
+```{r}
+# Load required library
+library(caret)
+
+# Set seed for reproducibility
+set.seed(42)
+
+# Step 1: Partition the data
+trainIndex <- createDataPartition(twenty.balanced.reg$Opp.Won.Target, p = 0.75, list = FALSE)
+train <- twenty.balanced.reg[trainIndex, ]
+temp <- twenty.balanced.reg[-trainIndex, ]
+validIndex <- createDataPartition(temp$Opp.Won.Target, p = 0.5, list = FALSE)
+valid <- temp[validIndex, ]
+test <- temp[-validIndex, ]
+
+# Step 2: Set variables as categorical
+twenty.balanced.reg <- as.data.frame(lapply(twenty.balanced.reg, as.factor))
+
+
+
+# Step 3: Create logistic regression 
+
+# IMPORTANT - make sure to drop unnecessary columns that won't be used in the regression before running this part, as you'll receive a "cannot allocate vector of size x" error
+logistic_model <- train(
+  Opp.Won.Target ~ ., 
+  data = twenty.balanced.reg[trainIndex, ], 
+  method = "glm",
+  trControl = trainControl(method = "none"),
+  family = "binomial"
+)
+
+
+# Step 4: Create error matrix
+predictions <- predict(logistic_model, newdata = twenty.balanced.reg[-trainIndex, ], type = "raw")
+confusionMatrix(predictions, twenty.balanced.reg[-trainIndex, ]$Opp.Won.Target)
+
+```
+
+```{r}
+# Same as above, but for the forty.balanced.reg dataframe. Whichever 
+
+# Load required library
+library(caret)
+
+# Set seed for reproducibility
+set.seed(42)
+
+# Step 1: Partition the data
+trainIndex <- createDataPartition(forty.balanced.reg$Opp.Won.Target, p = 0.75, list = FALSE)
+train <- forty.balanced.reg[trainIndex, ]
+temp <- forty.balanced.reg[-trainIndex, ]
+validIndex <- createDataPartition(temp$Opp.Won.Target, p = 0.5, list = FALSE)
+valid <- temp[validIndex, ]
+test <- temp[-validIndex, ]
+
+# Step 2: Set variables as categorical
+forty.balanced.reg <- as.data.frame(lapply(forty.balanced.reg, as.factor))
+
+# Step 3: Create logistic regression
+logistic_model <- train(
+  Opp.Won.Target ~ ., 
+  data = forty.balanced.reg[trainIndex, ], 
+  method = "glm",
+  trControl = trainControl(method = "none"),
+  family = "binomial"
+)
+
+# Step 4: Create error matrix
+predictions <- predict(logistic_model, newdata = forty.balanced.reg[-trainIndex, ], type = "raw")
+confusionMatrix(predictions, forty.balanced.reg[-trainIndex, ]$Opp.Won.Target)
+
+```
+
+For cleanliness, I didn't include all of the different model iterations, but here are their error matrix results compared. 
+
+Model Comparison Results
+	- Forty.balanced.reg
+		○ Version 1b (the winning model)
+			§ Pos Error: 46.2% 
+			§ Predicted Win: 28.1%
+			§ Actual vs Predicted Win: -11.9%
+				□ Relative to win rate: 29.75%
+	- Thirty.balanced.reg
+		○ Version 1
+			§ Pos Error: 54.6%
+			§ Predicted Win: 19.8%
+			§ Actual vs Predicted Win: -10.2%
+				□ Relative to win rate: 34%
+		○ Version 2b
+			§ Pos Error: 53%
+			§ Predicted Win: 20.3%
+			§ Actual vs Predicted Win: -9.8%
+				□ Relative to win rate: 32.67%
+	- Twent.balanced.reg
+		○ Version 1
+			§ Pos Error: 66.6%
+			§ Predicted Win: 10.8%
+			§ Actual vs Predicted Win: -9.2%
+				□ Relative to win rate: 46%
+		○ Version 2
+			§ Pos Error: 66%
+			§ Predicted Win: 10.8%
+			§ Actual vs Predicted Win: -9.2%
+				□ Relative to win rate: 46%
+
+
+The final model I stuck with (forty.balanced.reg version 1b) was a variant of the "forty.balanced.reg" model that dropped all of the interaction term variables (which turned out to not be all that differentiated from the base inputs), along with other dummy variables that lacked predictive power. Here are the final values with their coefficients from the winning model. 
+
+	- Forty.balanced.reg (Version 1b)
+		○ Coefficients
+			§ Intercept: -0.63
+			§ Lifespan.30: 2.02
+			§ Lifespan.60: 1.65
+			§ New: -0.19
+			§ Upgrade: -1.50
+			§ Upsell: 0.52
+			§ Migration: -1.25
+			§ Decommission: -5.68
+			§ Recontract: -0.77
+			§ Agency.Enterprise: 0.20
+			§ Agency.Field: -0.39
+			§ CMGA: -0.07
+			§ DCM: 0.15
+			§ Commit: 1.03
+			§ Pipeline: -0.36
+			§ 5th-8th Week: -0.20
+			§ 9th-10th Week: -0.35
+			§ 11th-12th Week: -0.47
+			§ 13th Week: -0.56
