@@ -1,42 +1,33 @@
 # Supervised-Learning-Revenue-Prediction
-The coefficients from the winning model (defined by error matrix results below) are used in the professional services predictor algorithm (not shown in this file), 
+The coefficients from the winning model (defined by confusion matrix results below) are used in the professional services predictor algorithm (not shown in this file), 
 where the resultant log odds ratio is converted into a win probability and then multiplied by each opportunity's professional services value to arrive at an expected PS value for each opportunity. 
 This exact same algorithm can be used to predict bookings as well.
 
-For cleanliness, I didn't include all of the different model iterations, but here are their error matrix results compared. 
+Efficacy:
+Before implementing this model, professional services budget estimates were, on average, 62% off from the actual final sales value for the quarter. Even software sales forecasts (which are revised on a weekly basis) had a 46% final sales variance. But after implementing this model, the forecast variance dropped to just 25%.
+
+
+For readability, I didn't include all of the different model iterations and exploratory analyses in the code, but here are their confusion matrix results compared. 
+
+The following error rates may seem high, but it's important to note that predicting enterprise sales outcomes isn't comparable to calculating something deterministic like mechanical failure. No matter how much data you collect, enterprise buying decisions are highly variable and impossible to predict at the individual level. The accuracy of the forecast is determined by the algorithim's expected value calculation for the quarter, so even though the positive error rate is 46.2%, the expected value of the false negatives partially offsets the value of the false positives, resulting in a 21 percentage point reduction in forecast variance.  
 
 Model Comparison Results
 	- Forty.balanced.reg
 		○ Version 1b (the winning model)
 			§ Pos Error: 46.2% 
-			§ Predicted Win: 28.1%
-			§ Actual vs Predicted Win: -11.9%
-				□ Relative to win rate: 29.75%
 	- Thirty.balanced.reg
 		○ Version 1
 			§ Pos Error: 54.6%
-			§ Predicted Win: 19.8%
-			§ Actual vs Predicted Win: -10.2%
-				□ Relative to win rate: 34%
 		○ Version 2b
 			§ Pos Error: 53%
-			§ Predicted Win: 20.3%
-			§ Actual vs Predicted Win: -9.8%
-				□ Relative to win rate: 32.67%
 	- Twent.balanced.reg
 		○ Version 1
 			§ Pos Error: 66.6%
-			§ Predicted Win: 10.8%
-			§ Actual vs Predicted Win: -9.2%
-				□ Relative to win rate: 46%
 		○ Version 2
 			§ Pos Error: 66%
-			§ Predicted Win: 10.8%
-			§ Actual vs Predicted Win: -9.2%
-				□ Relative to win rate: 46%
 
 
-The final model I stuck with (forty.balanced.reg version 1b) was a variant of the "forty.balanced.reg" model that dropped all of the interaction terms (which turned out to not be all that differentiated from the base inputs), along with other dummy variables that lacked predictive power. Here are the final values with their coefficients from the winning model. 
+The final model I stuck with (forty.balanced.reg version 1b) was a variant of the "forty.balanced.reg" model that dropped all of the interaction terms (which turned out to not be all that differentiated from the base inputs), along with other dummy variables that lacked predictive power. Along with their coefficients, here are the variables that were deemed best fit for use in the algorithim.
 
 	- Forty.balanced.reg (Version 1b)
 		○ Coefficients
