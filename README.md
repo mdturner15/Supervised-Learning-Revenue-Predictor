@@ -1,4 +1,4 @@
-# Supervised-Learning-Revenue-Predictor
+# Supervised-Learning-Revenue-Prediction
 The coefficients from the winning model (defined by error matrix results below) are used in the professional services predictor algorithm (not shown in this file), 
 where the resultant log odds ratio is converted into a win probability and then multiplied by each opportunity's professional services value to arrive at an expected PS value for each opportunity. 
 This exact same algorithm can be used to predict bookings as well.
