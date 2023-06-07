@@ -1,6 +1,4 @@
 # Supervised-Learning-Revenue-Predictor
-Using a ~3 million record input to generate a revenue predictor algorithm, whose independent variables are determined by comparing different logistic regression outcomes.
-
 The coefficients from the winning model (defined by error matrix results below) are used in the professional services predictor algorithm (not shown in this file), 
 where the resultant log odds ratio is converted into a win probability and then multiplied by each opportunity's professional services value to arrive at an expected PS value for each opportunity. 
 This exact same algorithm can be used to predict bookings as well.
@@ -38,8 +36,7 @@ Model Comparison Results
 				□ Relative to win rate: 46%
 
 
-The final model I stuck with (forty.balanced.reg version 1b) was a variant of the "forty.balanced.reg" model that dropped all of the interaction term variables (which turned out to not be all that differentiated from the base inputs), 
-along with other dummy variables that lacked predictive power. Here are the final values with their coefficients from the winning model. 
+The final model I stuck with (forty.balanced.reg version 1b) was a variant of the "forty.balanced.reg" model that dropped all of the interaction terms (which turned out to not be all that differentiated from the base inputs), along with other dummy variables that lacked predictive power. Here are the final values with their coefficients from the winning model. 
 
 	- Forty.balanced.reg (Version 1b)
 		○ Coefficients
