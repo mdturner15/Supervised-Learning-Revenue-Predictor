@@ -8,25 +8,22 @@ where the resultant log odds ratio is converted into a win probability and then 
 Efficacy:
 Before implementing this model, professional services budget estimates were, on average, 62% off from the actual final sales value for the quarter. Even software sales forecasts (which are revised on a weekly basis) had a 46% final sales variance. But after implementing this model, the forecast variance dropped to just 25%.
 
-
-For readability, I didn't include all of the different model iterations and exploratory analyses in the code, but here are their confusion matrix results compared. 
-
-The following error rates may seem high, but it's important to note that predicting enterprise sales outcomes isn't comparable to calculating something deterministic like mechanical failure. No matter how much data you collect, enterprise buying decisions are highly variable and impossible to predict at the individual level. The accuracy of the forecast is determined by the algorithim's expected value calculation for the quarter, so even though the positive error rate is 46.2%, the expected value of the false negatives partially offsets the value of the false positives, resulting in a 21 percentage point reduction in forecast variance.  
+The following confusion matrix error rates may seem high, but it's important to note that predicting enterprise sales outcomes isn't comparable to calculating something deterministic like mechanical failure. No matter how much data you collect, enterprise buying decisions are highly variable and impossible to predict at the individual level. The accuracy of the forecast is determined by the algorithim's expected value calculation for the quarter, so even though the positive error rate is 46.2%, the expected value of the false negatives partially offsets the value of the false positives, resulting in a 21 percentage point reduction in forecast variance.  
 
 Model Comparison Results
-	- Forty.balanced.reg
+	- Model A
 		○ Version 1b (the winning model)
 			§ Pos Error: 46.2% 
-	- Thirty.balanced.reg
+	- Model B
 		○ Version 1
 			§ Pos Error: 54.6%
 		○ Version 2b
 			§ Pos Error: 53%
-	- Twent.balanced.reg
+	- Model C
 		○ Version 1
 			§ Pos Error: 66.6%
 		○ Version 2
 			§ Pos Error: 66%
 
 
-The final model I stuck with (forty.balanced.reg version 1b) was a variant of the "forty.balanced.reg" model that dropped many of the interaction terms (which turned out to not be all that differentiated from the base inputs), along with other dummy variables that lacked predictive power. The coefficients from this final model were then plugged into the forecast algorithim as I discussed in the introduction.
+The final model I stuck with (Model A) was a variant of the "forty.balanced.reg" model that dropped many of the interaction terms (which turned out to not be all that differentiated from the base inputs), along with other dummy variables that lacked predictive power. The coefficients from this final model were then plugged into the forecast algorithim as discussed in the introductary paragraph.
