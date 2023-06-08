@@ -1,5 +1,5 @@
 # Supervised-Learning-Revenue-Prediction
-DISCLAIMER: I've removed all information proprietary to my employer (e.g., key statements, variable selection, and algorithim coefficients). The sole purpose of this repo is to serve as a high-level illustration of the approach I took. 
+DISCLAIMER: I've removed/alterred all information proprietary to my employer (e.g., key statements, variable selection, variable names, and algorithim coefficients). The sole purpose of this repo is to serve as a high-level illustration of the approach I took. 
 
 Necessary Context:
 The coefficients from the winning model (defined by confusion matrix results below) are used in the professional services predictor algorithm (not shown in this file), 
