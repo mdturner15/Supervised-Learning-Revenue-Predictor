@@ -1,7 +1,9 @@
 # Supervised-Learning-Revenue-Prediction
+DISCLAIMER: I've removed all information proprietary to my employer (e.g., key statements, variable selection, and algorithim coefficients). The sole purpose of this repo is to serve as a high-level illustration of the approach I took. 
+
+Necessary Context:
 The coefficients from the winning model (defined by confusion matrix results below) are used in the professional services predictor algorithm (not shown in this file), 
-where the resultant log odds ratio is converted into a win probability and then multiplied by each opportunity's professional services value to arrive at an expected PS value for each opportunity. 
-This exact same algorithm can be used to predict bookings as well.
+where the resultant log odds ratio is converted into a win probability and then multiplied by each opportunity's professional services value to arrive at an expected PS value for each opportunity. This exact same algorithm can be used to predict bookings as well.
 
 Efficacy:
 Before implementing this model, professional services budget estimates were, on average, 62% off from the actual final sales value for the quarter. Even software sales forecasts (which are revised on a weekly basis) had a 46% final sales variance. But after implementing this model, the forecast variance dropped to just 25%.
@@ -27,26 +29,4 @@ Model Comparison Results
 			§ Pos Error: 66%
 
 
-The final model I stuck with (forty.balanced.reg version 1b) was a variant of the "forty.balanced.reg" model that dropped all of the interaction terms (which turned out to not be all that differentiated from the base inputs), along with other dummy variables that lacked predictive power. Along with their coefficients, here are the variables that were deemed best fit for use in the algorithim.
-
-	- Forty.balanced.reg (Version 1b)
-		○ Coefficients
-			§ Intercept: -0.63
-			§ Lifespan.30: 2.02
-			§ Lifespan.60: 1.65
-			§ New: -0.19
-			§ Upgrade: -1.50
-			§ Upsell: 0.52
-			§ Migration: -1.25
-			§ Decommission: -5.68
-			§ Recontract: -0.77
-			§ Agency.Enterprise: 0.20
-			§ Agency.Field: -0.39
-			§ CMGA: -0.07
-			§ DCM: 0.15
-			§ Commit: 1.03
-			§ Pipeline: -0.36
-			§ 5th-8th Week: -0.20
-			§ 9th-10th Week: -0.35
-			§ 11th-12th Week: -0.47
-			§ 13th Week: -0.56
+The final model I stuck with (forty.balanced.reg version 1b) was a variant of the "forty.balanced.reg" model that dropped many of the interaction terms (which turned out to not be all that differentiated from the base inputs), along with other dummy variables that lacked predictive power. The coefficients from this final model were then plugged into the forecast algorithim as I discussed in the introduction.
